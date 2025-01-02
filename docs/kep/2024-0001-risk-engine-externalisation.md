@@ -22,7 +22,7 @@ Version: draft-2
   - [Embedded risk engine with external checks](#embedded-risk-engine-with-external-checks)
     - [Sample checks configuration](#sample-checks-configuration)
     - [Evaluation](#evaluation)
-  - [Remote risk engine](#remote-risk-engine)
+  - [Remote risk engine service](#remote-risk-engine-service)
     - [Protocol](#protocol)
     - [Risk Engine Embedding](#risk-engine-embedding)
       - [Standalone Executable](#standalone-executable)
@@ -89,6 +89,7 @@ on the risk analysis (e.g. critical paths from a compromised resource).
 This section provides examples of how the risk engine will be used to determine
 the risk of a Kubehound resource.
 
+> [!NOTE]
 > These examples are illustrative and do not represent the final implementation.
 
 ### Pod Security Context
@@ -151,6 +152,7 @@ The risk evaluation will be done in the core codebase.
 
 ### Sample checks configuration
 
+> [!NOTE]
 > This is an illustrative example and does not represent the final implementation.
 
 <details><summary>Critical Service Account</summary>
@@ -234,7 +236,7 @@ The proposed risk engine externalisation strategy has the following pros and con
 | Pros       | - The risk engine is embedded in the core codebase. <br> - The checks are externalised as separate configuration items. <br> - The risk engine can be easily extended by adding new checks. |
 | Cons       | - The risk engine evaluation are limited by the check expression language. <br> - Limited to static checks based on a predefined set of conditions. |
 
-## Remote risk engine
+## Remote risk engine service
 
 The risk engine will be externalised as a separate module communicating with the
 core codebase using gRPC streams. The risk engine will be responsible for 
@@ -251,12 +253,15 @@ results.
 ```
 
 The risk engine will be implemented in Go and packaged as a standalone
-executable. The risk engine will be responsible for loading the checks from a
-configuration file and running the checks against the Kubehound resources.
+executable. The risk engine will be responsible for implementing the checks and
+returning the risk analysis results to the core codebase. These checks could 
+use external data sources to make decisions (e.g. querying a vulnerability
+database).
 
 Using gRPC streams will allow the risk engine to handle many requests required 
 for large clusters and define a contract between the core codebase and the risk 
-engine. The implementer can build a risk engine using any language supporting gRPC.
+engine. The implementer can build a risk engine using any language supporting 
+gRPC.
 
 ### Protocol
 
@@ -332,6 +337,7 @@ process managed by the codebase or as a unmanaged standalone service.
 
 #### Standalone Executable
 
+> [!NOTE]
 > `kubehound ingest` will start the risk engine as a separate process and will
 > communicate with the risk engine using gRPC streams.
 
@@ -364,6 +370,7 @@ risk-engine:
 
 #### Risk Engine as Service
 
+> [!NOTE]
 > `kubehound ingest` will communicate with the pre-existing risk engine using 
 > gRPC streams.
 
@@ -385,6 +392,10 @@ risk-engine:
       # The address of the gRPC risk engine endpoint.
       address: tcp://localhost:50051
 ```
+
+> [!TIP]
+> To handle the remote risk service authentication, we recommend using a managed 
+> risk engine process delegating to the remote authenticated service. 
 
 ### Evaluation
 
