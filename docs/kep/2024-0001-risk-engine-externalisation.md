@@ -9,6 +9,31 @@ Last Updated: 2025-01-02
 Version: draft-2
 ---
 
+- [Abstract](#abstract)
+- [Motivation](#motivation)
+- [Proposal](#proposal)
+- [Design](#design)
+  - [Risk Engine Decisions](#risk-engine-decisions)
+  - [Example](#example)
+    - [Pod Security Context](#pod-security-context)
+    - [Container Image Security](#container-image-security)
+    - [RBAC Permissions](#rbac-permissions)
+- [Implementation(s)](#implementations)
+  - [Embedded risk engine with external checks](#embedded-risk-engine-with-external-checks)
+    - [Sample checks configuration](#sample-checks-configuration)
+    - [Evaluation](#evaluation)
+  - [Remote risk engine](#remote-risk-engine)
+    - [Protocol](#protocol)
+    - [Risk Engine Embedding](#risk-engine-embedding)
+      - [Standalone Executable](#standalone-executable)
+      - [Risk Engine as Service](#risk-engine-as-service)
+    - [Evaluation](#evaluation-1)
+- [Threat Model](#threat-model)
+  - [Security Concerns](#security-concerns)
+  - [Privacy Concerns](#privacy-concerns)
+- [History](#history)
+- [References](#references)
+
 # Abstract
 
 KubeHound is a tool that helps to identify security risks in Kubernetes clusters. 
