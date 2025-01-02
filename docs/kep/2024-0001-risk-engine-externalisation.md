@@ -128,6 +128,8 @@ The risk evaluation will be done in the core codebase.
 
 > This is an illustrative example and does not represent the final implementation.
 
+<details><summary>Critical Service Account</summary>
+
 ```yaml
 apiVersion: kubehound.io/v1
 kind: RiskEngineCheck
@@ -135,7 +137,7 @@ metadata:
   name: critical-service-account
 spec:
   # The resource kind to check.
-  kind: identity
+  kind: Identity
   # The conditions to filter the resources.
   filter:
     # Evict the resource if the type is not "serviceaccount".
@@ -158,6 +160,33 @@ spec:
     # The risk level of the resource.
     riskLevel: high
 ```
+</details>
+
+<details><summary>Vulnerable Container</summary>
+
+```yaml
+apiVersion: kubehound.io/v1
+kind: RiskEngineCheck
+metadata:
+  name: dvwa-vulnerable-container
+spec:
+  # The resource kind to check.
+  kind: Container
+  # The checks to run against the resource.
+  checks:
+    # The container image is DVWA.
+    - properties:
+      - key: "image"
+        operator: match
+        value: "citizenstig/dvwa.*"
+  decision:
+    # The risk level of the resource.
+    riskLevel: critical
+    # Flag the resource as compromised.
+    compromised: true
+```
+
+</details>
 
 The risk engine configuration will be stored in a configuration file handled by
 the core codebase.
@@ -165,11 +194,8 @@ the core codebase.
 ```yaml
 # The configuration for the risk engine.
 risk-engine:
-  # Whether the default risk engine is disabled.
-  default: 
-    enabled: false
-  # The risk engine 
-  internal:
+  # The risk engine is embedded in the core codebase and the checks are externalised.
+  checks:
     # Where the checks are stored.
     directory: /etc/kubehound/checks
 ```
@@ -280,11 +306,8 @@ Service configuration:
 ```yaml
 # The configuration for the risk engine.
 risk-engine:
-  # Whether the default risk engine is disabled.
-  default: 
-    enabled: false
   # The risk engine is running as a separate process.
-  external:
+  service:
     # The core codebase will execute the risk engine.
     managed:
       # The path to the risk engine executable.
@@ -318,11 +341,8 @@ Service configuration:
 ```yaml
 # The configuration for the risk engine.
 risk-engine:
-  # Disable the default risk engine.
-  default: 
-    enabled: false
   # The risk engine is running as a separate service.
-  external:
+  service:
     client: 
       # The address of the gRPC risk engine endpoint.
       address: tcp://localhost:50051
