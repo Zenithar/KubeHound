@@ -200,6 +200,15 @@ risk-engine:
     directory: /etc/kubehound/checks
 ```
 
+### Evaluation
+
+The proposed risk engine externalisation strategy has the following pros and cons:
+
+| Evaluation | Comment |
+|------------|---------|
+| Pros       | - The risk engine is embedded in the core codebase. <br> - The checks are externalised as separate configuration items. <br> - The risk engine can be easily extended by adding new checks. |
+| Cons       | - The risk engine evaluation are limited by the check expression language. <br> - Limited to static checks based on a predefined set of conditions. |
+
 ## Remote risk engine
 
 The risk engine will be externalised as a separate module communicating with the
@@ -232,6 +241,8 @@ to the risk engine and to receive responses from the risk engine synchronously
 in near real-time.
 
 The risk engine will expose the following gRPC service:
+
+<details><summary>Risk Engine Protocol</summary>
 
 ```protobuf
 // The RiskEngine service provides an interface for analysing the risk of
@@ -277,6 +288,8 @@ message AnalyzeResponse {
   RiskLevel risk_level = 2;
 }
 ```
+
+</details>
 
 ### Risk Engine Embedding
 
@@ -347,6 +360,15 @@ risk-engine:
       # The address of the gRPC risk engine endpoint.
       address: tcp://localhost:50051
 ```
+
+### Evaluation
+
+The proposed risk engine externalisation strategy has the following pros and cons:
+
+| Evaluation | Comment |
+|------------|---------|
+| Pros       | - The risk engine is externalised as a separate module. <br> - The risk engine can be implemented in any language supporting gRPC. <br> - The checks can implement complex data-driven logic. <br> - Ingestion flexibility where resources could be altered during their processing. |
+| Cons       | - The risk engine is a standalone artifact to deploy and manage. <br> - Introduce network calls during data ingestion that could slow down the whole process or introduce failures. |
 
 # Threat Model
 
