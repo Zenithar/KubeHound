@@ -1,5 +1,6 @@
 ---
 KEP: 2024-0001
+Title: Risk Engine externalisation
 Authors: 
   - Thibault Normand <Zenithar>
 Status: Draft
@@ -7,36 +8,8 @@ Created: 2024-12-23
 Last Updated: 2025-01-02
 Version: draft-2
 ---
-# KEP2024-0001 - Risk Engine externalisation
 
-## Table of Contents
-
-- [KEP2024-0001 - Risk Engine externalisation](#kep2024-0001---risk-engine-externalisation)
-  - [Table of Contents](#table-of-contents)
-  - [Abstract](#abstract)
-  - [Motivation](#motivation)
-  - [Proposal](#proposal)
-  - [Design](#design)
-    - [Risk Engine Decisions](#risk-engine-decisions)
-    - [Example](#example)
-      - [Pod Security Context](#pod-security-context)
-      - [Container Image Security](#container-image-security)
-      - [RBAC Permissions](#rbac-permissions)
-  - [Implementation](#implementation)
-    - [Embedded risk engine with external checks](#embedded-risk-engine-with-external-checks)
-      - [Sample checks configuration](#sample-checks-configuration)
-    - [Remote risk engine](#remote-risk-engine)
-      - [Protocol](#protocol)
-      - [Risk Engine Embedding](#risk-engine-embedding)
-        - [Standalone Executable](#standalone-executable)
-        - [Risk Engine as Service](#risk-engine-as-service)
-  - [Threat Model](#threat-model)
-    - [Security Concerns](#security-concerns)
-    - [Privacy Concerns](#privacy-concerns)
-  - [History](#history)
-  - [References](#references)
-
-## Abstract
+# Abstract
 
 KubeHound is a tool that helps to identify security risks in Kubernetes clusters. 
 It is a static analysis tool that scans Kubernetes resources and manifests to 
@@ -48,7 +21,7 @@ resources.
 This KEP proposes to externalise the risk engine in KubeHound to make it easier 
 to add new resource-based checks and maintain the risk engine.
 
-## Motivation
+# Motivation
 
 The current risk engine in KubeHound is tightly coupled with the core codebase, 
 making it challenging to add dynamic decisions and maintain the risk engine. 
@@ -57,13 +30,13 @@ By externalising the risk engine, we can make it easier to add new checks and
 maintain the risk engine, as well as to make it easier to extend the risk
 engine to add external support data for decision-making.
 
-## Proposal
+# Proposal
 
 The risk engine in KubeHound will be externalised into a separate module. The
 current risk engine will be refactored to be used as the default risk engine to 
 ensure backward compatibility.
 
-## Design
+# Design
 
 Externalisation strategies will allow the risk engine to be easily extended to 
 add new resource checks and to be easily maintained. Customers will be able to 
@@ -75,49 +48,49 @@ and then run the checks against the Kubehound resources during the resource
 ingestion. The risk engine will return the risk analysis results to the core 
 codebase for graph embedding.
 
-### Risk Engine Decisions
+## Risk Engine Decisions
 
 The risk engine will be used to define:
 
-- The resource's criticality (High, Medium, Low)
-- The resource's compromise status (Compromised, Not Compromised)
+- The resource's criticality (High, Medium, Low).
+- The resource's compromise status (Compromised, Not Compromised).
 
 These decisions will be embedded in the vertices and edges of the KubeHound 
 graph to allow the core codebase to query the graph and to get the results based
 on the risk analysis (e.g. critical paths from a compromised resource).
 
-### Example
+## Example
 
 This section provides examples of how the risk engine will be used to determine
 the risk of a Kubehound resource.
 
 > These examples are illustrative and do not represent the final implementation.
 
-#### Pod Security Context
+### Pod Security Context
 
 The risk engine will be able to check the pods' security context and determine 
 if the security context is set correctly. The risk engine will be able to check 
 the following:
 
-- The pod is running as a privileged pod
-- The pod is running as a non-root pod
-- The pod has mounted sensitive volumes
+- The pod is running as a privileged pod.
+- The pod is running as a non-root pod.
+- The pod has mounted sensitive volumes.
 
-#### Container Image Security
+### Container Image Security
 
 The risk engine will be able to check the security of the container images and
 determine if the container images are secure. The risk engine will be able
 to check the following:
 
-- The container image has identified vulnerabilities
-- The container image is running with the latest version
+- The container image has identified vulnerabilities.
+- The container image is running with the latest version.
 
 For performance reasons, the risk engine should consume the results of the image
 and vulnerability scanning tools. Querying these tools inline
 would be too slow. The scanning reports should be used as support material for
 the risk engine.
 
-#### RBAC Permissions
+### RBAC Permissions
 
 The risk engine will be able to check the RBAC permissions and determine if the
 permissions are set correctly. The risk engine will be able to check the following:
@@ -125,9 +98,20 @@ permissions are set correctly. The risk engine will be able to check the followi
 - The user is a privileged user
 - The service account has excessive permissions
 
-## Implementation
+# Implementation(s)
 
-### Embedded risk engine with external checks
+The risk engine will be externalised in two ways:
+
+- Embedded risk engine with external checks where the risk engine is embedded in
+  the core codebase and the checks are externalised as separate configuration 
+  items.
+- Remote risk engine where the risk engine is externalised as a separate module
+  communicating with the core codebase using gRPC streams.
+
+These integrations will allow the risk engine to be adapted to the customer's
+needs.
+
+## Embedded risk engine with external checks
 
 The risk engine will be embedded in the core codebase, and the checks will be
 externalised as separate configuration items. 
@@ -140,13 +124,13 @@ externalise the checks without the need to maintain a separate service.
 
 The risk evaluation will be done in the core codebase.
 
-#### Sample checks configuration
+### Sample checks configuration
 
 > This is an illustrative example and does not represent the final implementation.
 
 ```yaml
 apiVersion: kubehound.io/v1
-kind: ResourceCheck
+kind: RiskEngineCheck
 metadata:
   name: critical-service-account
 spec:
@@ -190,7 +174,7 @@ risk-engine:
     directory: /etc/kubehound/checks
 ```
 
-### Remote risk engine
+## Remote risk engine
 
 The risk engine will be externalised as a separate module communicating with the
 core codebase using gRPC streams. The risk engine will be responsible for 
@@ -214,7 +198,7 @@ Using gRPC streams will allow the risk engine to handle many requests required
 for large clusters and define a contract between the core codebase and the risk 
 engine. The implementer can build a risk engine using any language supporting gRPC.
 
-#### Protocol
+### Protocol
 
 The risk engine will communicate with the core codebase using gRPC bidirectional 
 streams. The bidirectional streams will allow the core codebase to send requests
@@ -268,7 +252,7 @@ message AnalyzeResponse {
 }
 ```
 
-#### Risk Engine Embedding
+### Risk Engine Embedding
 
 The risk engine will be embedded in the core codebase as a separate module in a 
 dedicated process. The forked process will provide a gRPC stream endpoint and 
@@ -282,7 +266,7 @@ arguments to pass to the executable or the gRPC risk engine endpoint address.
 According to the risk engine complexity, the risk engine can be run as a separate
 process managed by the codebase or as a unmanaged standalone service.
 
-##### Standalone Executable
+#### Standalone Executable
 
 > `kubehound ingest` will start the risk engine as a separate process and will
 > communicate with the risk engine using gRPC streams.
@@ -317,7 +301,7 @@ risk-engine:
       address: unix:///var/run/risk-engine.sock
 ```
 
-##### Risk Engine as Service
+#### Risk Engine as Service
 
 > `kubehound ingest` will communicate with the pre-existing risk engine using 
 > gRPC streams.
@@ -344,9 +328,9 @@ risk-engine:
       address: tcp://localhost:50051
 ```
 
-## Threat Model
+# Threat Model
 
-### Security Concerns
+## Security Concerns
 
 The risk engine will be responsible for analysing the risk of the Kubehound
 resources. The output of the risk engine will be used to influence the graph
@@ -355,20 +339,20 @@ impact on the security of the cluster or the resources. At minima, the risk
 engine will return an incorrect risk analysis result which is consistent with a 
 false positive or a false negative.
 
-### Privacy Concerns
+## Privacy Concerns
 
 The risk engine is not responsible for storing or transmitting sensitive/personal
 data. The risk engine will only analyse the Kubehound resources and return the
 risk analysis results. No personal data should be processed intentionally.
 
-## History
+# History
 
 - 2024-12-23 - `draft-1`
   - Bootstrap the KEP
 - 2025-01-02 - `draft-2`
   - Add configuration-based risk engine
 
-## References
+# References
 
 - [KubeHound](https://kubehound.io)
 - [gRPC](https://grpc.io)
